@@ -11,6 +11,24 @@ A support ticket API with an AI-powered assistant that can create, update, and m
 └── .github/workflows # PR review automation
 ```
 
+## Technologies
+
+**API**
+- Python 3.11+
+- FastAPI, Pydantic, Uvicorn
+
+**Agent**
+- LangChain, LangGraph
+- Azure OpenAI (GPT-4)
+- httpx for API calls
+
+**Infrastructure**
+- Terraform
+- Azure Container Apps
+
+**CI/CD**
+- GitHub Actions
+
 ## Setup
 
 ### 1. Install dependencies
