@@ -1,3 +1,4 @@
+"""In-memory storage layer for ticket data."""
 from api.models import Ticket
 
 tickets: dict[str, Ticket] = {}
