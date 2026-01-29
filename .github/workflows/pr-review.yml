@@ -1,0 +1,78 @@
+# Automated PR reviewer using Azure OpenAI
+# Triggers on new PRs and pushes, analyzes the diff for bugs/security issues,
+# then posts feedback as a comment. Saves time waiting for human reviews.
+
+name: PR Review Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD > diff.txt
+          echo "diff_size=$(wc -c < diff.txt)" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install openai httpx
+
+      - name: Review PR
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python << 'EOF'
+          import os
+          import httpx
+
+          endpoint = os.environ["AZURE_OPENAI_ENDPOINT"]
+          api_key = os.environ["AZURE_OPENAI_API_KEY"]
+          gh_token = os.environ["GITHUB_TOKEN"]
+
+          with open("diff.txt") as f:
+              diff = f.read()[:8000]  # Limit diff size
+
+          # Call Azure OpenAI
+          response = httpx.post(
+              f"{endpoint}/openai/deployments/gpt-5-mini/chat/completions?api-version=2024-12-01-preview",
+              headers={"api-key": api_key},
+              json={
+                  "messages": [
+                      {"role": "system", "content": "You are a code reviewer. Review this PR diff and provide brief, actionable feedback. Focus on bugs, security issues, and improvements."},
+                      {"role": "user", "content": f"Review this diff:\n\n{diff}"}
+                  ],
+                  "max_tokens": 500
+              },
+              timeout=30
+          )
+          review = response.json()["choices"][0]["message"]["content"]
+
+          # Post comment to PR
+          pr_url = f"https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+          httpx.post(
+              pr_url,
+              headers={"Authorization": f"token {gh_token}"},
+              json={"body": f"## AI Code Review\n\n{review}"}
+          )
+          print("Review posted!")
+          EOF
