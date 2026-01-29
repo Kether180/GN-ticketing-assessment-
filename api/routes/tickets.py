@@ -1,10 +1,13 @@
 from datetime import datetime
 from uuid import uuid4
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from api.models import Ticket, TicketCreate, TicketUpdate, TicketStatus, Comment
 from api import storage, exceptions
+from api.auth import verify_api_key
 
-router = APIRouter(prefix="/tickets", tags=["tickets"])
+router = APIRouter(
+    prefix="/tickets", tags=["tickets"], dependencies=[Depends(verify_api_key)]
+)
 
 
 @router.post("", status_code=201, summary="Create ticket")
@@ -77,8 +80,7 @@ def delete_ticket(ticket_id: str):
 
 @router.post("/{ticket_id}/comments", status_code=201, summary="Add comment")
 def add_comment(
-    ticket_id: str,
-    text: str = Query(..., description="Comment text")
+    ticket_id: str, text: str = Query(..., description="Comment text")
 ) -> Ticket:
     """Adds a comment to the ticket."""
     ticket = storage.get_by_id(ticket_id)
