@@ -61,7 +61,7 @@ jobs:
                       {"role": "system", "content": "You are a code reviewer. Review this PR diff and provide brief, actionable feedback. Focus on bugs, security issues, and improvements."},
                       {"role": "user", "content": f"Review this diff:\n\n{diff}"}
                   ],
-                  "max_tokens": 500
+                  "max_completion_tokens": 500
               },
               timeout=30
           )
