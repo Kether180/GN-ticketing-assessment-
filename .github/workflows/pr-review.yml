@@ -45,9 +45,9 @@ jobs:
           import os
           import httpx
 
-          endpoint = os.environ["AZURE_OPENAI_ENDPOINT"]
-          api_key = os.environ["AZURE_OPENAI_API_KEY"]
-          gh_token = os.environ["GITHUB_TOKEN"]
+          endpoint = os.environ["AZURE_OPENAI_ENDPOINT"].strip().rstrip("/")
+          api_key = os.environ["AZURE_OPENAI_API_KEY"].strip()
+          gh_token = os.environ["GITHUB_TOKEN"].strip()
 
           with open("diff.txt") as f:
               diff = f.read()[:8000]  # Limit diff size
