@@ -65,7 +65,11 @@ jobs:
               },
               timeout=30
           )
-          review = response.json()["choices"][0]["message"]["content"]
+          data = response.json()
+          if "error" in data:
+              print(f"Azure OpenAI error: {data['error']}")
+              raise SystemExit(1)
+          review = data["choices"][0]["message"]["content"]
 
           # Post comment to PR
           pr_url = f"https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
